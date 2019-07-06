@@ -1,0 +1,28 @@
+{
+  "name": "testbot",
+  "version": "1.0.0",
+  "description": "A custom Discord bot for the Test Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node ./dist/index.js",
+    "dev": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PulseDevelopmentGroup/TestBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PulseDevelopmentGroup/TestBot/issues"
+  },
+  "homepage": "https://github.com/PulseDevelopmentGroup/TestBot#readme",
+  "devDependencies": {
+    "ts-node": "^8.3.0"
+  },
+  "dependencies": {
+    "nodemon": "^1.19.1"
+  }
+}
