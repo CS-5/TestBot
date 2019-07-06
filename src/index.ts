@@ -1,5 +1,15 @@
-const thing: string = 'Heyo, I work :D';
+import * as Discord from 'discord.js';
 
-debugger;
+const client = new Discord.Client();
 
-console.log(thing);
+client.on('ready', () => {
+  console.log('Bot connected');
+});
+
+client.on('message', message => {
+  if (message.content.startsWith('!test')) {
+    message.channel.send("I'm Alive :D");
+  }
+});
+
+client.login('NTk1OTk4ODI5MzEzMjYxNTY4.XR33Eg.uVCdZUnTh5rUEN3i4NE-bEj0nqI');
