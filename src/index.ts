@@ -1,6 +1,8 @@
 import * as Discord from 'discord.js';
+import * as dotenv from 'dotenv';
 
 const client = new Discord.Client();
+dotenv.config();
 
 client.on('ready', () => {
   console.log('Bot connected');
@@ -12,4 +14,4 @@ client.on('message', message => {
   }
 });
 
-client.login('NTk1OTk4ODI5MzEzMjYxNTY4.XR33Eg.uVCdZUnTh5rUEN3i4NE-bEj0nqI');
+client.login(process.env.API_KEY); // haha get pranked API key scraper!

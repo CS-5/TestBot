@@ -1,4 +1,6 @@
 dist/
+node_modules/
+.env
 
 # Binaries for programs and plugins
 *.exe
