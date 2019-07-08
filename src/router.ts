@@ -1,4 +1,4 @@
-import { Collection, Message } from 'discord.js';
+import { Collection, Message, RichEmbed } from 'discord.js';
 
 interface Command {
     name: string;
@@ -45,6 +45,14 @@ export function route(message: Message) {
 }
 
 // Built-in helper function (literally), used to print commands and descriptions
-export function help(message: Message, args: string[]) {
-    message.channel.send("This will be a help message eventually.")
+export function help(message: Message) {
+    const embed = new RichEmbed()
+    .setTitle("Command List:")
+    .setColor("#f5e042");
+
+    commands.forEach((command: Command, name: string) => {
+        embed.addField(name, command.description, true)
+    })
+
+    message.channel.send(embed)
 }
