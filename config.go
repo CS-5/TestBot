@@ -8,8 +8,9 @@ import (
 )
 
 type botConfig struct {
-	simpleCommands map[string]string
-	permissions    map[string][]string
+	requestableRoles []string
+	simpleCommands   map[string]string
+	permissions      map[string][]string
 }
 
 func getConfig(path string) (*botConfig, error) {
@@ -18,6 +19,7 @@ func getConfig(path string) (*botConfig, error) {
 		return &botConfig{}, err
 	}
 
+	requestableRoles := getRequestableRoles(json)
 	simpleCommands, err := getSimpleCommands(json)
 	if err != nil {
 		return &botConfig{}, err
@@ -29,8 +31,9 @@ func getConfig(path string) (*botConfig, error) {
 	}
 
 	return &botConfig{
-		simpleCommands: simpleCommands,
-		permissions:    permissions,
+		requestableRoles: requestableRoles,
+		simpleCommands:   simpleCommands,
+		permissions:      permissions,
 	}, nil
 }
 
@@ -46,6 +49,15 @@ func getJSON(path string) (string, error) {
 	}
 
 	return string(json), nil
+}
+
+func getRequestableRoles(json string) []string {
+	var ids []string
+	for _, id := range gjson.Get(json, "requestableRoles").Array() {
+		ids = append(ids, id.String())
+	}
+
+	return ids
 }
 
 func getSimpleCommands(json string) (map[string]string, error) {

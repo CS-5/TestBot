@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+
+  environment {
+    VERSION = "0.1"  
+      
+    registry = "docker.pkg.github.com/pulsedevelopmentgroup/0x626f74/zeroxsix"
+    registryCredential = "githubpr"
+
+    outputImage = ""
+  }
+  
+  stages {
+    stage("Clone Git") {
+      steps {
+        git "https://github.com/PulseDevelopmentGroup/0x626f74.git"
+      }
+    }
+
+    stage("Build Docker Image") {
+      steps {
+        script {
+          outputImage = docker.build(registry, "-f .ci/Dockerfile .")
+        }
+      }
+    }
+    stage("Push Image") {
+      steps {
+        script {
+          docker.withRegistry("https://docker.pkg.github.com", registryCredential) {
+            outputImage.push("latest")
+            outputImage.push("$VERSION-$BUILD_NUMBER")
+          }
+        }
+      }
+    }
+
+    stage("Cleanup") {
+      steps {
+        sh "docker rmi $registry:latest"
+        sh "docker rmi $registry:$VERSION-$BUILD_NUMBER"
+      }
+    }
+  }
+}

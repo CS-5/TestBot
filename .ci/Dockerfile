@@ -10,7 +10,6 @@ RUN go build -o zeroxsix .
 # Build Docker Image
 FROM alpine:latest
 WORKDIR /app
-RUN apk add --no-cache ca-certificates
 COPY --from=0 /app/zeroxsix .
 
 CMD ./zeroxsix

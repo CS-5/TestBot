@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -36,12 +35,8 @@ func initLogging(debug bool) *logrus.Logger {
 	return log
 }
 
-func arrayContains(array []string, value string, ignoreCase bool) bool {
+func arrayContains(array []string, value string) bool {
 	for _, e := range array {
-		if ignoreCase {
-			e = strings.ToLower(e)
-		}
-
 		if e == value {
 			return true
 		}
