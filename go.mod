@@ -3,7 +3,8 @@ module 0x626f74
 go 1.13
 
 require (
-	github.com/bwmarrin/discordgo v0.19.0
+	github.com/CS-5/disgomux v0.0.0-20191209150914-93a0009ae65b
+	github.com/bwmarrin/discordgo v0.20.1
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/caarlos0/env/v6 v6.1.0
 	github.com/joho/godotenv v1.3.0
