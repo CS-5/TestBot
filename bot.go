@@ -108,6 +108,10 @@ func main() {
 			Command:  "jpeg",
 			HelpText: "More JPEG for the last image. 'nuff said",
 		},
+		cTip{
+			Command:  "tip",
+			HelpText: "Tech is hard. We're here to help",
+		},
 	)
 
 	dMux.Options(&disgomux.Options{

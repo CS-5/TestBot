@@ -1,0 +1,7 @@
+When in doubt, reboot it
+Try JavaScript
+Try TypeScript
+Try Go
+Get a Mac
+Use Linux
+Avoid all Windows updates
