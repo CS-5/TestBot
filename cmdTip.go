@@ -2,16 +2,22 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 
 	"github.com/CS-5/disgomux"
+	"github.com/google/go-github/v29/github"
 )
 
 type (
 	cTip struct {
 		Command  string
 		HelpText string
+
+		GHClient *github.Client
 	}
 )
 
@@ -20,6 +26,29 @@ func (t cTip) Init(m *disgomux.Mux) {
 }
 
 func (t cTip) Handle(ctx *disgomux.Context) {
+
+	if strings.ToLower(ctx.Arguments[0]) == "add" {
+		opts := github.RepositoryContentGetOptions{
+			Ref: "master",
+		}
+
+		fmt.Printf("%+v\n", &t.GHClient)
+
+		repo, _, _, err := t.GHClient.Repositories.GetContents(context.Background(), "PulseDevelopmentGroup", "0x626f74-data", "TEST.md", &opts)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		content, err := repo.GetContent()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		ctx.ChannelSend(content)
+
+		return
+	}
 
 	f, err := os.Open("./tips.txt")
 	if err != nil {

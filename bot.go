@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,8 +10,10 @@ import (
 	"github.com/CS-5/disgomux"
 	"github.com/bwmarrin/discordgo"
 	goenv "github.com/caarlos0/env/v6"
+	"github.com/google/go-github/v29/github"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
 
 type (
@@ -19,6 +22,7 @@ type (
 		Debug   bool   `env:"DEBUG" envDefault:"false"`
 		DataDir string `env:"DATA_DIR" envDefault:"data/"`
 		Fuzzy   bool   `env:"USE_FUZZY" envDefault:"false"`
+		GHToken string `env:"GITHUB_TOKEN"`
 	}
 )
 
@@ -83,6 +87,14 @@ func main() {
 
 	/* === Register all the things === */
 
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{
+			AccessToken: env.GHToken,
+		},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+
 	dMux.Register(
 		cDebug{
 			Command:  "debug",
@@ -111,6 +123,7 @@ func main() {
 		cTip{
 			Command:  "tip",
 			HelpText: "Tech is hard. We're here to help",
+			GHClient: github.NewClient(tc),
 		},
 	)
 
