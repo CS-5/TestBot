@@ -24,6 +24,11 @@ type (
 var tips []string
 
 func (t cTip) Init(m *disgomux.Mux) {
+	if len(env.TipsURL) == 0 {
+		cLog.Info("No Tips URL provided. Skipping initialization")
+		return
+	}
+
 	resp, err := http.Get(env.TipsURL)
 	if err != nil {
 		cLog.WithField("error", err).Error("Unable to fetch tips config")
