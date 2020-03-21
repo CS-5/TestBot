@@ -68,6 +68,11 @@ func (t cTip) Handle(ctx *disgomux.Context) {
 		return
 	}
 
+	if len(tips) == 0 {
+		ctx.ChannelSend("Sorry, I'm plumb out of knowledge to share :(")
+		return
+	}
+
 	tipIndex := rand.Intn(len(tips))
 
 	ctx.ChannelSend(tips[tipIndex])
