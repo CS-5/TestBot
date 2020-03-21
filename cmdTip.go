@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
+	"net/http"
 	"strings"
 
 	"github.com/CS-5/disgomux"
@@ -21,18 +21,31 @@ type (
 	}
 )
 
+var tips []string
+
 func (t cTip) Init(m *disgomux.Mux) {
-	// Nothing to init
+	resp, err := http.Get(env.TipsURL)
+	if err != nil {
+		cLog.WithField("error", err).Error("Unable to fetch tips config")
+	}
+
+	defer resp.Body.Close()
+
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		tips = append(tips, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		cLog.WithField("error", err).Error("Unable to parse tips file")
+	}
 }
 
 func (t cTip) Handle(ctx *disgomux.Context) {
 
-	if strings.ToLower(ctx.Arguments[0]) == "add" {
+	if len(ctx.Arguments) > 0 && strings.ToLower(ctx.Arguments[0]) == "add" {
 		opts := github.RepositoryContentGetOptions{
 			Ref: "master",
 		}
-
-		fmt.Printf("%+v\n", &t.GHClient)
 
 		repo, _, _, err := t.GHClient.Repositories.GetContents(context.Background(), "PulseDevelopmentGroup", "0x626f74-data", "TEST.md", &opts)
 
@@ -48,23 +61,6 @@ func (t cTip) Handle(ctx *disgomux.Context) {
 		ctx.ChannelSend(content)
 
 		return
-	}
-
-	f, err := os.Open("./tips.txt")
-	if err != nil {
-		ctx.ChannelSend("We all have bad days. Unfortunately, this is one of mine")
-		return
-	}
-	defer f.Close()
-
-	var tips []string
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		tips = append(tips, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		ctx.ChannelSend("I dun broked D:")
 	}
 
 	tipIndex := rand.Intn(len(tips))

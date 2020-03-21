@@ -23,6 +23,7 @@ type (
 		DataDir string `env:"DATA_DIR" envDefault:"data/"`
 		Fuzzy   bool   `env:"USE_FUZZY" envDefault:"false"`
 		GHToken string `env:"GITHUB_TOKEN"`
+		TipsURL string `env:"TIPS_URL"`
 	}
 )
 
