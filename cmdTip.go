@@ -48,9 +48,17 @@ func (t cTip) Init(m *disgomux.Mux) {
 }
 
 func (t cTip) Handle(ctx *disgomux.Context) {
+	if len(ctx.Arguments) == 0 {
+		if len(tips) == 0 {
+			ctx.ChannelSend("Sorry, I'm plumb out of knowledge to share :(")
+			return
+		}
 
-	if len(ctx.Arguments) > 0 && strings.ToLower(ctx.Arguments[0]) == "add" {
+		tipIndex := rand.Intn(len(tips))
 
+		ctx.ChannelSend(tips[tipIndex])
+
+	} else if strings.ToLower(ctx.Arguments[0]) == "add" {
 		if len(ctx.Arguments) < 3 {
 			ctx.ChannelSend("Hrm... That tip is very... Informative? Try again, but this time, specify a tip :)")
 			return
@@ -143,18 +151,7 @@ func (t cTip) Handle(ctx *disgomux.Context) {
 		}
 
 		ctx.ChannelSend("A pull request has been created at " + pr.GetHTMLURL())
-
-		return
 	}
-
-	if len(tips) == 0 {
-		ctx.ChannelSend("Sorry, I'm plumb out of knowledge to share :(")
-		return
-	}
-
-	tipIndex := rand.Intn(len(tips))
-
-	ctx.ChannelSend(tips[tipIndex])
 }
 
 func (t cTip) HandleHelp(ctx *disgomux.Context) bool {
