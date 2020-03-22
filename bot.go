@@ -108,6 +108,10 @@ func main() {
 			Command:  "jpeg",
 			HelpText: "More JPEG for the last image. 'nuff said",
 		},
+		cSiegeStats{
+			Command:  "siege",
+			HelpText: "Get stats for your favorite players (i.e.: Carson)",
+		},
 	)
 
 	dMux.Options(&disgomux.Options{
