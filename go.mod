@@ -14,6 +14,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
+	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/tidwall/gjson v1.5.0
 	github.com/tidwall/pretty v1.0.1 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
