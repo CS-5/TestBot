@@ -25,15 +25,17 @@ type (
 
 var tips []string
 
-func (t cTip) Init(m *disgomux.Mux) {
+func (t cTip) LoadTips() error {
+	tips = []string{}
 	if len(env.TipsURL) == 0 {
 		cLog.Info("No Tips URL provided. Skipping initialization")
-		return
+		return nil
 	}
 
 	resp, err := http.Get(env.TipsURL)
 	if err != nil {
 		cLog.WithField("error", err).Error("Unable to fetch tips config")
+		return err
 	}
 
 	defer resp.Body.Close()
@@ -44,7 +46,14 @@ func (t cTip) Init(m *disgomux.Mux) {
 	}
 	if err := scanner.Err(); err != nil {
 		cLog.WithField("error", err).Error("Unable to parse tips file")
+		return err
 	}
+
+	return nil
+}
+
+func (t cTip) Init(m *disgomux.Mux) {
+	t.LoadTips()
 }
 
 func (t cTip) Handle(ctx *disgomux.Context) {
@@ -151,6 +160,14 @@ func (t cTip) Handle(ctx *disgomux.Context) {
 		}
 
 		ctx.ChannelSend("A pull request has been created at " + pr.GetHTMLURL())
+	} else if strings.ToLower(ctx.Arguments[0]) == "reload" {
+		err := t.LoadTips()
+		if err != nil {
+			ctx.ChannelSend("Something went wrong when reloading the tips... Try again later?")
+			return
+		}
+
+		ctx.ChannelSend("Tips successfully reloaded")
 	}
 }
 
