@@ -1,0 +1,17 @@
+{
+    "simpleCommands": {
+        "doubt": "https://tenor.com/view/doubt-la-noire-cole-phelps-gif-13372170",
+        "corn": "https://raw.githubusercontent.com/PulseDevelopmentGroup/0x626f74/master/data/corn.png",
+        "github": "https://github.com/PulseDevelopmentGroup/0x626f74",
+        "fine": "https://raw.githubusercontent.com/PulseDevelopmentGroup/0x626f74/master/data/fine.png",
+        "config": "https://raw.githubusercontent.com/PulseDevelopmentGroup/0x626f74/master/data/config.json"
+    },
+    "permissions": {
+        "debug": [
+            "664471488081952788"
+        ],
+        "reload": [
+            "664471488081952788"
+        ]
+    }
+}
