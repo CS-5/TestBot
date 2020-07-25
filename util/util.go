@@ -53,10 +53,15 @@ func IsURL(test string) bool {
 	return true
 }
 
+func GetMsgURL(guildID, channelID, messageID string) string {
+	return "https://discordapp.com/channels/" +
+		guildID + "/" + channelID + "/" + messageID
+}
+
 var (
 	idRE      = regexp.MustCompile(`^\d{18}`)
 	botRE     = regexp.MustCompile(`<@&\d{18}>`)
-	userRE    = regexp.MustCompile(`<@!\d{18}>`)
+	userRE    = regexp.MustCompile(`<@!*\d{18}>`)
 	channelRE = regexp.MustCompile(`<#\d{18}>`)
 
 	idExtractRE = regexp.MustCompile(`\d{18}`)

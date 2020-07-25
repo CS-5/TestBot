@@ -17,6 +17,8 @@ type (
 	BotConfig struct {
 		Path string
 
+		ErrorChannel string
+
 		SimpleCommands map[string]string
 		Permissions    map[string]*multiplexer.CommandPermissions
 	}
@@ -46,6 +48,7 @@ func Get(path string) (*BotConfig, error) {
 
 	return &BotConfig{
 		Path:           path,
+		ErrorChannel:   gjson.Get(json, "errorChannel").String(),
 		SimpleCommands: simpleCommands,
 		Permissions:    perms,
 	}, nil

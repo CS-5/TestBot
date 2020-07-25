@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
 	"github.com/PulseDevelopmentGroup/0x626f74/util"
 	"github.com/bwmarrin/discordgo"
+	"github.com/patrickmn/go-cache"
 )
 
 // Toxic is a bot command
@@ -24,6 +26,9 @@ type (
 		Key string
 
 		Logger *log.Logs
+
+		RateLimitMax int
+		RateLimitDB  *cache.Cache
 	}
 
 	response struct {
@@ -61,21 +66,29 @@ func (c Toxic) Init(m *multiplexer.Mux) {
 
 // Handle is called by the multiplexer whenever a user triggers the command.
 func (c Toxic) Handle(ctx *multiplexer.Context) {
+	if len(c.Key) == 0 {
+		c.Logger.CmdErr(
+			ctx, nil, "Perspective API key not specified, command will not process",
+		)
+		return
+	}
+
 	/* Get messages from the arguments */
 	messages, err := c.getMessages(ctx)
 	if err != nil {
-		c.Logger.CmdErr(ctx, err, "Unable to get messages")
+		c.Logger.CmdErr(ctx, err, "Unable to get messages from arguments supplied")
+		return
 	}
 
 	/* If no messages were found, let the user know and exit */
 	if len(messages) == 0 {
-		ctx.ChannelSend("No messages to check against")
+		ctx.ChannelSend("No messages found")
 		return
 	}
 
 	/* Built out arrays of messages and their attributes */
 	var (
-		ratings []map[string]*attribute
+		ratings []map[string]float32
 		content string // Temporary placeholder for single messages
 	)
 
@@ -91,8 +104,9 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 		rating, err := c.getRatings(content, ctx)
 		if err != nil {
 			c.Logger.CmdErr(
-				ctx, err, "Unable to get ratings for the supplied message",
+				ctx, err, "Unable to get ratings for the supplied message(s)",
 			)
+			return
 		}
 		ratings = append(ratings, rating)
 	}
@@ -114,13 +128,14 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 		for k, v := range ratings[0] {
 			fields = append(fields, &discordgo.MessageEmbedField{
 				Name:  c.fixKey(k),
-				Value: fmt.Sprintf("%.0f%%", v.SummaryScore.Value*100),
+				Value: fmt.Sprintf("%.0f%%", v*100),
 			})
 		}
 
 		embed.Title = "Message Toxicity Report"
 		embed.Description = "\"" + content + "\""
 		embed.Fields = fields
+
 		/* If there's more than one rating (checking multiple messages) */
 	} else {
 		embed.Title = "User Toxicity Report"
@@ -130,10 +145,11 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 
 		for _, rating := range ratings {
 			for k, v := range rating {
-				totals[k] += v.SummaryScore.Value
+				totals[k] += v
 			}
 		}
 
+		// TODO: Redundant code
 		for k, v := range totals {
 			avg := v / float32(len(ratings)) * 100
 
@@ -151,7 +167,7 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 
 func (c Toxic) getRatings(
 	message string, ctx *multiplexer.Context,
-) (map[string]*attribute, error) {
+) (map[string]float32, error) {
 	req, err := http.NewRequest(
 		"POST",
 		fmt.Sprintf(fmtURL, c.Key),
@@ -179,7 +195,20 @@ func (c Toxic) getRatings(
 	if err != nil {
 		return nil, err
 	}
-	return res.AttributeScores, nil
+
+	/* Sort results alphabetically */
+	var keys []string
+	for k := range res.AttributeScores {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	scores := make(map[string]float32)
+	for _, k := range keys {
+		scores[k] = res.AttributeScores[k].SummaryScore.Value
+	}
+
+	return scores, nil
 }
 
 func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, error) {
@@ -198,6 +227,9 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 
 		message := latestMessages[len(latestMessages)-1]
 		if len(message.Content) <= 1 {
+			if len(message.Embeds) >= 1 {
+				return messages, fmt.Errorf("unable to process embeds")
+			}
 			return messages, fmt.Errorf("message too short to process")
 		}
 
@@ -213,7 +245,11 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 			return messages, err
 		}
 
+		// TODO: This code is redundant... not sure if there's a better solution
 		if len(message.Content) <= 1 {
+			if len(message.Embeds) >= 1 {
+				return messages, fmt.Errorf("unable to process embeds")
+			}
 			return messages, fmt.Errorf("message too short to process")
 		}
 
@@ -240,6 +276,7 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 
 		/* DiscordGo only supports getting 100 messages */
 		if limit > 100 {
+			ctx.ChannelSend("Your number was >100, capping at 100")
 			limit = 100
 		}
 
@@ -259,13 +296,16 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 		}
 
 		if len(messages) == 0 {
-			return messages, fmt.Errorf("not enough messages from the supplied user")
+			return messages, fmt.Errorf(
+				"no messages found for user '%s' in the last %d messages",
+				user.Username, limit,
+			)
 		}
 		return messages, nil
 	}
 
 	return messages, fmt.Errorf(
-		"the argument `%s` doesn't seem to be a message ID or username",
+		"the argument '%s' doesn't seem to be a message ID or username",
 		ctx.Arguments[0],
 	)
 }
@@ -290,7 +330,9 @@ func (c Toxic) HandleHelp(ctx *multiplexer.Context) bool {
 // associated with that command.
 func (c Toxic) Settings() *multiplexer.CommandSettings {
 	return &multiplexer.CommandSettings{
-		Command:  c.Command,
-		HelpText: c.HelpText,
+		Command:      c.Command,
+		HelpText:     c.HelpText,
+		RateLimitDB:  c.RateLimitDB,
+		RateLimitMax: c.RateLimitMax,
 	}
 }

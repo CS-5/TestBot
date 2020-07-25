@@ -3,7 +3,6 @@ module github.com/PulseDevelopmentGroup/0x626f74
 go 1.14
 
 require (
-	github.com/CS-5/disgoreact v0.1.1
 	github.com/bwmarrin/discordgo v0.21.1
 	github.com/caarlos0/env/v6 v6.3.0
 	github.com/disintegration/imaging v1.6.2

@@ -1,9 +1,14 @@
 package log
 
 import (
+	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
+	"github.com/PulseDevelopmentGroup/0x626f74/util"
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,12 +18,13 @@ type Logs struct {
 	Command     *logrus.Entry
 	Multiplexer *logrus.Entry
 
-	debug bool
+	debug        bool
+	errorChannel string
 }
 
 // New creates a new Logs stuct. Accepts a boolean specifying whether
 // debug mode is enabled.
-func New(debug bool) *Logs {
+func New(debug bool, errorChannel string) *Logs {
 	logrus.SetOutput(os.Stdout)
 	primary := logrus.New()
 
@@ -34,10 +40,11 @@ func New(debug bool) *Logs {
 	}
 
 	return &Logs{
-		Primary:     primary,
-		Command:     primary.WithField("type", "command"),
-		Multiplexer: primary.WithField("type", "multiplexer"),
-		debug:       debug,
+		Primary:      primary,
+		Command:      primary.WithField("type", "command"),
+		Multiplexer:  primary.WithField("type", "multiplexer"),
+		debug:        debug,
+		errorChannel: errorChannel,
 	}
 }
 
@@ -61,10 +68,65 @@ func (l *Logs) MuxMiddleware(ctx *multiplexer.Context) {
 // CmdErr is used for handling errors within commands which should be reported
 // to the user. Takes a multiplexer context, error message, and user-readable
 // message which are sent to the channel where the command was executed.
-func (l *Logs) CmdErr(ctx *multiplexer.Context, err error, msg string) {
-	ctx.ChannelSendf(
-		"That's broken.. maybe :at: Carson or Josiah?\n```Message: %s\nError: %s```",
-		msg, err.Error(),
-	)
-	l.Command.Error(err)
+func (l *Logs) CmdErr(ctx *multiplexer.Context, errMsg error, msg string) {
+	// Inform the user of the issue (using a basic message string)
+	ctx.ChannelSendf("The bot seems to have encountered an issue: `%s`", msg)
+
+	// Inform the admins of the issue
+	msgTime, err := ctx.Message.Timestamp.Parse()
+	if err != nil {
+		msgTime = time.Time{}
+	}
+
+	msgChannel := "unknown"
+	channel, err := ctx.Session.Channel(ctx.Message.ChannelID)
+	if err == nil {
+		msgChannel = channel.Name
+	}
+
+	ctx.Session.ChannelMessageSendEmbed(l.errorChannel, &discordgo.MessageEmbed{
+		Color: 0xff0000,
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: ctx.Message.Author.AvatarURL(""),
+			Name:    ctx.Message.Author.Username,
+		},
+		Title: fmt.Sprintf("🚧 Error with command `%s%s`", ctx.Prefix, ctx.Command),
+		URL: util.GetMsgURL(
+			ctx.Message.GuildID, ctx.Message.ChannelID, ctx.Message.ID,
+		),
+
+		Timestamp: msgTime.Format("2006-01-02T15:04:05.000Z"),
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "🚶 User",
+				Value:  ctx.Message.Author.Username,
+				Inline: true,
+			},
+			{
+				Name:   "#️⃣ Channel",
+				Value:  fmt.Sprintf("#%s", msgChannel),
+				Inline: true,
+			},
+			{
+				Name:   "🕹️ Command",
+				Value:  ctx.Prefix + ctx.Command,
+				Inline: true,
+			},
+			{
+				Name:  "✉️ Command Message",
+				Value: msg,
+			},
+			{
+				Name:  "⚠️ Error Message",
+				Value: errMsg.Error(),
+			},
+			{
+				Name: "🖊️ Command Text",
+				Value: ctx.Prefix + ctx.Command +
+					" " + strings.Join(ctx.Arguments[:], " "),
+			},
+		},
+	})
+
+	l.Command.Error(errMsg)
 }

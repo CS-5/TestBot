@@ -57,7 +57,7 @@ func init() {
 	}
 
 	/* Define logging setup */
-	logs = log.New(env.Debug)
+	logs = log.New(env.Debug, cfg.ErrorChannel)
 }
 
 func main() {
@@ -126,10 +126,12 @@ func main() {
 			RateLimitDB:  cache.New(30*time.Minute, 30*time.Minute),
 		},
 		command.Toxic{
-			Command:  "toxic",
-			HelpText: "Someone really acting up? Get a toxicity rating.",
-			Logger:   logs,
-			Key:      env.PerspectiveKey,
+			Command:      "toxic",
+			HelpText:     "Someone really acting up? Get a toxicity rating.",
+			Logger:       logs,
+			Key:          env.PerspectiveKey,
+			RateLimitDB:  cache.New(10*time.Minute, 10*time.Minute),
+			RateLimitMax: 2,
 		},
 	)
 
