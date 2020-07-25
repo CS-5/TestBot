@@ -84,49 +84,51 @@ func (l *Logs) CmdErr(ctx *multiplexer.Context, errMsg error, msg string) {
 		msgChannel = channel.Name
 	}
 
-	ctx.Session.ChannelMessageSendEmbed(l.errorChannel, &discordgo.MessageEmbed{
-		Color: 0xff0000,
-		Author: &discordgo.MessageEmbedAuthor{
-			IconURL: ctx.Message.Author.AvatarURL(""),
-			Name:    ctx.Message.Author.Username,
-		},
-		Title: fmt.Sprintf("🚧 Error with command `%s%s`", ctx.Prefix, ctx.Command),
-		URL: util.GetMsgURL(
-			ctx.Message.GuildID, ctx.Message.ChannelID, ctx.Message.ID,
-		),
+	if !l.debug {
+		ctx.Session.ChannelMessageSendEmbed(l.errorChannel, &discordgo.MessageEmbed{
+			Color: 0xff0000,
+			Author: &discordgo.MessageEmbedAuthor{
+				IconURL: ctx.Message.Author.AvatarURL(""),
+				Name:    ctx.Message.Author.Username,
+			},
+			Title: fmt.Sprintf("🚧 Error with command `%s%s`", ctx.Prefix, ctx.Command),
+			URL: util.GetMsgURL(
+				ctx.Message.GuildID, ctx.Message.ChannelID, ctx.Message.ID,
+			),
 
-		Timestamp: msgTime.Format("2006-01-02T15:04:05.000Z"),
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "🚶 User",
-				Value:  ctx.Message.Author.Username,
-				Inline: true,
+			Timestamp: msgTime.Format("2006-01-02T15:04:05.000Z"),
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:   "🚶 User",
+					Value:  ctx.Message.Author.Username,
+					Inline: true,
+				},
+				{
+					Name:   "#️⃣ Channel",
+					Value:  fmt.Sprintf("#%s", msgChannel),
+					Inline: true,
+				},
+				{
+					Name:   "🕹️ Command",
+					Value:  ctx.Prefix + ctx.Command,
+					Inline: true,
+				},
+				{
+					Name:  "✉️ Command Message",
+					Value: msg,
+				},
+				{
+					Name:  "⚠️ Error Message",
+					Value: errMsg.Error(),
+				},
+				{
+					Name: "🖊️ Command Text",
+					Value: ctx.Prefix + ctx.Command +
+						" " + strings.Join(ctx.Arguments[:], " "),
+				},
 			},
-			{
-				Name:   "#️⃣ Channel",
-				Value:  fmt.Sprintf("#%s", msgChannel),
-				Inline: true,
-			},
-			{
-				Name:   "🕹️ Command",
-				Value:  ctx.Prefix + ctx.Command,
-				Inline: true,
-			},
-			{
-				Name:  "✉️ Command Message",
-				Value: msg,
-			},
-			{
-				Name:  "⚠️ Error Message",
-				Value: errMsg.Error(),
-			},
-			{
-				Name: "🖊️ Command Text",
-				Value: ctx.Prefix + ctx.Command +
-					" " + strings.Join(ctx.Arguments[:], " "),
-			},
-		},
-	})
+		})
+	}
 
 	l.Command.Error(errMsg)
 }

@@ -76,7 +76,9 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 	/* Get messages from the arguments */
 	messages, err := c.getMessages(ctx)
 	if err != nil {
-		c.Logger.CmdErr(ctx, err, "Unable to get messages from arguments supplied")
+		c.Logger.CmdErr(
+			ctx, err, "Unable to get message(s), maybe they're too short?",
+		)
 		return
 	}
 
@@ -149,7 +151,7 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 			}
 		}
 
-		// TODO: Redundant code
+		// TODO: Redundant code. I am sure there's a way to eliminate this
 		for k, v := range totals {
 			avg := v / float32(len(ratings)) * 100
 
@@ -214,7 +216,10 @@ func (c Toxic) getRatings(
 func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, error) {
 	ctx.Session.ChannelTyping(ctx.Message.ChannelID)
 
-	var messages []*discordgo.Message
+	var (
+		messages []*discordgo.Message
+		message  *discordgo.Message
+	)
 
 	/* No arguments? Grab the previous message */
 	if len(ctx.Arguments) == 0 {
@@ -224,35 +229,28 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 		if err != nil {
 			return messages, err
 		}
-
-		message := latestMessages[len(latestMessages)-1]
-		if len(message.Content) <= 1 {
-			if len(message.Embeds) >= 1 {
-				return messages, fmt.Errorf("unable to process embeds")
-			}
-			return messages, fmt.Errorf("message too short to process")
-		}
-
-		return append(messages, message), nil
+		message = latestMessages[len(latestMessages)-1]
 	}
 
 	/* Is the argument supplied a generic ID? Grab that message */
 	if util.IsID(ctx.Arguments[0]) {
-		message, err := ctx.Session.ChannelMessage(
+		var err error
+		message, err = ctx.Session.ChannelMessage(
 			ctx.Message.ChannelID, ctx.Arguments[0],
 		)
 		if err != nil {
 			return messages, err
 		}
+	}
 
-		// TODO: This code is redundant... not sure if there's a better solution
+	/* If either of the two above statements were true, return with the message */
+	if len(ctx.Arguments) == 0 || util.IsID(ctx.Arguments[0]) {
 		if len(message.Content) <= 1 {
 			if len(message.Embeds) >= 1 {
 				return messages, fmt.Errorf("unable to process embeds")
 			}
 			return messages, fmt.Errorf("message too short to process")
 		}
-
 		return append(messages, message), nil
 	}
 
@@ -290,8 +288,12 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 		}
 
 		for _, msg := range bulkMessages {
-			// Only get messages from the user in question and ignore commands
-			if msg.Author.ID == user.ID && msg.Content[0:1] != ctx.Prefix {
+			/* Only get messages from the user in question and ignore commands,
+			messages with a single character, or URLs */
+			if msg.Author.ID == user.ID &&
+				len(msg.Content) > 1 &&
+				msg.Content[0:1] != ctx.Prefix &&
+				!util.IsURL(msg.Content) {
 				messages = append(messages, msg)
 			}
 		}

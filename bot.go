@@ -130,8 +130,8 @@ func main() {
 			HelpText:     "Someone really acting up? Get a toxicity rating.",
 			Logger:       logs,
 			Key:          env.PerspectiveKey,
-			RateLimitDB:  cache.New(10*time.Minute, 10*time.Minute),
-			RateLimitMax: 2,
+			RateLimitDB:  cache.New(5*time.Minute, 5*time.Minute),
+			RateLimitMax: 5,
 		},
 	)
 
