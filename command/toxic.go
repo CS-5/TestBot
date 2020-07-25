@@ -82,7 +82,7 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 
 	/* If no messages were found, let the user know and exit */
 	if len(messages) == 0 {
-		ctx.ChannelSend("No messages found")
+		ctx.ChannelSend("No valid messages found")
 		return
 	}
 
