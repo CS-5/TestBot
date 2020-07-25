@@ -134,17 +134,13 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 			})
 		}
 
-		embed.Title = "Message Toxicity Report"
+		embed.Title = "📝 Message Toxicity Report"
 		embed.Description = "\"" + content + "\""
 		embed.Fields = fields
 
 		/* If there's more than one rating (checking multiple messages) */
 	} else {
-		embed.Title = "User Toxicity Report"
-		embed.Description = "Report based on the recent messages sent by the user"
-
 		totals := make(map[string]float32)
-
 		for _, rating := range ratings {
 			for k, v := range rating {
 				totals[k] += v
@@ -161,9 +157,10 @@ func (c Toxic) Handle(ctx *multiplexer.Context) {
 			})
 		}
 
+		embed.Title = "📝 User Toxicity Report"
+		embed.Description = fmt.Sprintf("Report based on the last %d messages sent", len(ratings))
 		embed.Fields = fields
 	}
-
 	ctx.Session.ChannelMessageSendEmbed(ctx.Message.ChannelID, embed)
 }
 
@@ -230,10 +227,8 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 			return messages, err
 		}
 		message = latestMessages[len(latestMessages)-1]
-	}
-
-	/* Is the argument supplied a generic ID? Grab that message */
-	if util.IsID(ctx.Arguments[0]) {
+		/* Is the argument supplied a generic ID? Grab that message */
+	} else if util.IsID(ctx.Arguments[0]) {
 		var err error
 		message, err = ctx.Session.ChannelMessage(
 			ctx.Message.ChannelID, ctx.Arguments[0],
@@ -314,7 +309,18 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 }
 
 func (c Toxic) fixKey(key string) string {
-	return strings.Title(strings.ToLower(strings.Replace(key, "_", " ", -1)))
+	switch key := strings.Title(strings.ToLower(strings.Replace(key, "_", " ", -1))); key {
+	case "Flirtation":
+		return key + " ❤️"
+	case "Identity Attack":
+		return key + " 👺"
+	case "Threat":
+		return key + " 🔫"
+	case "Toxicity":
+		return key + " ☣️"
+	default:
+		return key
+	}
 }
 
 // HandleHelp is called by whatever help command is in place when a user enters

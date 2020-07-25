@@ -212,7 +212,15 @@ func (m *Mux) Handle(
 	}
 
 	/* Split the message on the space */
-	args := strings.Split(message.Content, " ")
+	var args []string
+	for _, arg := range strings.Split(message.Content, " ") {
+		if arg == " " || arg == "" {
+			continue
+		}
+
+		args = append(args, strings.TrimSpace(arg))
+	}
+
 	command := strings.ToLower(args[0][1:])
 
 	simple, ok := m.SimpleCommands[command]
