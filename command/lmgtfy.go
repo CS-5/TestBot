@@ -8,7 +8,6 @@ import (
 )
 
 // LMGTFY is a command
-// TODO: Make this a better description
 type LMGTFY struct {
 	Command  string
 	HelpText string

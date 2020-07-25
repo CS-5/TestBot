@@ -19,11 +19,12 @@ import (
 )
 
 type environment struct {
-	Token     string `env:"BOT_TOKEN"`
-	Debug     bool   `env:"DEBUG" envDefault:"false"`
-	DataDir   string `env:"DATA_DIR" envDefault:"data/"`
-	ConfigURL string `env:"CONFIG_URL"`
-	Fuzzy     bool   `env:"USE_FUZZY" envDefault:"false"`
+	Token          string `env:"BOT_TOKEN"`
+	PerspectiveKey string `env:"PERSPECTIVE_KEY"`
+	Debug          bool   `env:"DEBUG" envDefault:"false"`
+	DataDir        string `env:"DATA_DIR" envDefault:"data/"`
+	ConfigURL      string `env:"CONFIG_URL"`
+	Fuzzy          bool   `env:"USE_FUZZY" envDefault:"false"`
 }
 
 var (
@@ -88,46 +89,35 @@ func main() {
 	})
 
 	/* === Register all the things === */
-
-	/* Initialize Global Variables */
-	// TODO: Do away with this. Permissions should be handled at the reg level
-	// level and the CmdErr function could be moved to the command package.
-	command.InitGlobals(cfg, logs)
-
-	/* Register the commands with the multiplexer*/
 	mux.Register(
-		command.Debug{
-			Command:  "debug",
-			HelpText: "Debuging info for bot-wranglers",
-		},
 		command.Wiki{
 			Command:      "wikirace",
 			HelpText:     "Start a wikirace",
 			RateLimitMax: 3,
 			RateLimitDB:  cache.New(5*time.Minute, 5*time.Minute),
+			Logger:       logs,
 		},
 		command.Gatekeeper{
 			Command:  "role",
 			HelpText: "Manage your access to roles, and their related channels",
+			Logger:   logs,
 		},
 		command.Help{
 			Command:  "help",
 			HelpText: "Displays help  information regarding the bot's commands",
+			Logger:   logs,
 		},
 		command.Inspire{
 			Command:      "inspire",
 			HelpText:     "Get an inspirational quote from inspirobot.me",
 			RateLimitMax: 3,
 			RateLimitDB:  cache.New(5*time.Minute, 5*time.Minute),
+			Logger:       logs,
 		},
 		command.JPEG{
 			Command:  "jpeg",
 			HelpText: "More JPEG for the last image. 'nuff said",
-		},
-		command.Reload{
-			Command:  "reload",
-			HelpText: "Reload the bot's config",
-			Mux:      mux,
+			Logger:   logs,
 		},
 		command.LMGTFY{
 			Command:      "googlehelp",
@@ -135,7 +125,22 @@ func main() {
 			RateLimitMax: 2,
 			RateLimitDB:  cache.New(30*time.Minute, 30*time.Minute),
 		},
+		command.Toxic{
+			Command:  "toxic",
+			HelpText: "Someone really acting up? Get a toxicity rating.",
+			Logger:   logs,
+			Key:      env.PerspectiveKey,
+		},
 	)
+
+	for k := range cfg.SimpleCommands {
+		k := k
+		mux.RegisterSimple(multiplexer.SimpleCommand{
+			Command:  k,
+			Content:  cfg.SimpleCommands[k],
+			HelpText: "This is a simple command",
+		})
+	}
 
 	/* Configure multiplexer options */
 	mux.SetOptions(&multiplexer.Options{
@@ -151,9 +156,6 @@ func main() {
 	if env.Fuzzy {
 		mux.UseFuzzy()
 	}
-
-	/* Register commands from the config file */
-	command.RegisterSimple(mux)
 
 	/* === End Register === */
 
@@ -186,6 +188,6 @@ func main() {
 
 	/* Wait for interrupt */
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 }

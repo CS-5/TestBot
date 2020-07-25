@@ -7,16 +7,18 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/PulseDevelopmentGroup/0x626f74/log"
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
 	"github.com/bwmarrin/discordgo"
 	"github.com/patrickmn/go-cache"
 )
 
 // Wiki is a command
-// TODO: Make this a better description
 type Wiki struct {
 	Command  string
 	HelpText string
+
+	Logger *log.Logs
 
 	RateLimitMax int
 	RateLimitDB  *cache.Cache
@@ -46,20 +48,20 @@ func (c Wiki) Init(m *multiplexer.Mux) {
 func (c Wiki) Handle(ctx *multiplexer.Context) {
 	resp, err := http.Get("https://en.wikipedia.org/w/api.php?action=query&format=json&list=random&rnnamespace=0&rnlimit=2")
 	if err != nil {
-		cmdErr(ctx, err, "Unable to get random wikipedia page")
+		c.Logger.CmdErr(ctx, err, "Unable to get random wikipedia page")
 		return
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		cmdErr(ctx, err, "Unable to read page")
+		c.Logger.CmdErr(ctx, err, "Unable to read page")
 		return
 	}
 
 	var search wikiResult
 	err = json.Unmarshal(body, &search)
 	if err != nil {
-		cmdErr(ctx, err, "Unable to unmarshal page")
+		c.Logger.CmdErr(ctx, err, "Unable to unmarshal page")
 		return
 	}
 

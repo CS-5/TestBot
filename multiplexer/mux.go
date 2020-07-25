@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/PulseDevelopmentGroup/0x626f74/util"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/patrickmn/go-cache"
 	"github.com/sahilm/fuzzy"
@@ -87,7 +86,7 @@ type (
 // New initlaizes a new Mux object
 func New(prefix string) (*Mux, error) {
 	if len(prefix) > 1 {
-		return &Mux{}, fmt.Errorf("Prefix %s greater than 1 character", prefix)
+		return &Mux{}, fmt.Errorf("prefix %s greater than 1 character", prefix)
 	}
 
 	return &Mux{
@@ -174,7 +173,6 @@ func (m *Mux) Initialize() {
 	for _, c := range m.Commands {
 		c.Init(m)
 	}
-	return
 }
 
 // Handle is passed to DiscordGo to handle actions
@@ -365,8 +363,5 @@ func CheckPermissions(
 		}
 	}
 
-	if util.ArrayContains(perms.ChanIDs, chanID, true) {
-		return true
-	}
-	return false
+	return util.ArrayContains(perms.ChanIDs, chanID, true)
 }

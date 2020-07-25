@@ -3,15 +3,17 @@ package command
 import (
 	"strings"
 
+	"github.com/PulseDevelopmentGroup/0x626f74/log"
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
 	"github.com/bwmarrin/discordgo"
 )
 
-// Help is a command
-// TODO: Make this a better description
+// Help is a bot command
 type Help struct {
 	Command  string
 	HelpText string
+
+	Logger *log.Logs
 }
 
 var (
@@ -41,7 +43,7 @@ func (c Help) Init(m *multiplexer.Mux) {
 		i++
 	}
 
-	logs.Command.WithField("command", c.Command).Infof(
+	c.Logger.Command.WithField("command", c.Command).Infof(
 		"Loaded help handlers and messages for %d commands", i,
 	)
 }

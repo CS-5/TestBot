@@ -3,20 +3,19 @@ package command
 import (
 	"io/ioutil"
 	"net/http"
-	"time"
 
-	"github.com/CS-5/disgoreact"
+	"github.com/PulseDevelopmentGroup/0x626f74/log"
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
-	"github.com/patrickmn/go-cache"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/patrickmn/go-cache"
 )
 
-// Inspire is a command
-// TODO: Make this a better description
+// Inspire is a bot command
 type Inspire struct {
 	Command  string
 	HelpText string
+
+	Logger *log.Logs
 
 	RateLimitMax int
 	RateLimitDB  *cache.Cache
@@ -32,7 +31,7 @@ func (c Inspire) Init(m *multiplexer.Mux) {
 func (c Inspire) Handle(ctx *multiplexer.Context) {
 	resp, err := http.Get("http://inspirobot.me/api?generate=true")
 	if err != nil {
-		cmdErr(ctx, err, "There was an error contacting the InspiroBot API")
+		c.Logger.CmdErr(ctx, err, "There was an error contacting the InspiroBot API")
 		return
 	}
 	defer resp.Body.Close()
@@ -40,11 +39,11 @@ func (c Inspire) Handle(ctx *multiplexer.Context) {
 	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			cmdErr(ctx, err, "Unable to parse InspiroBot response")
+			c.Logger.CmdErr(ctx, err, "Unable to parse InspiroBot response")
 			return
 		}
 
-		msg, err := ctx.Session.ChannelMessageSendEmbed(ctx.Message.ChannelID,
+		_, err = ctx.Session.ChannelMessageSendEmbed(ctx.Message.ChannelID,
 			&discordgo.MessageEmbed{
 				Footer: &discordgo.MessageEmbedFooter{
 					Text: "Like: 😄 | Delete: ❌",
@@ -57,40 +56,40 @@ func (c Inspire) Handle(ctx *multiplexer.Context) {
 		)
 
 		if err != nil {
-			cmdErr(ctx, err, "There was an issue sending the embed")
+			c.Logger.CmdErr(ctx, err, "There was an issue sending the embed")
 			return
 		}
-
-		w, err := disgoreact.NewWatcher(
-			msg, ctx.Session,
-			2*time.Second,
-			ctx,
-		)
-		if err != nil {
-			cmdErr(ctx, err, "There was an issue creating the reaction watcher")
-			return
-		}
-
-		err = w.Add(
-			disgoreact.Option{
-				Emoji:      "😄",
-				Expiration: 2 * time.Minute,
-				OnSucess:   c.like,
-				OnError:    c.reactErr,
-			},
-			disgoreact.Option{
-				Emoji:      "❌",
-				Expiration: 2 * time.Minute,
-				OnSucess:   c.delete,
-				OnError:    c.reactErr,
-			},
-		)
-		if err != nil {
-			cmdErr(ctx, err,
-				"There was an issue adding a one of the reaction options",
+		/*
+			w, err := disgoreact.NewWatcher(
+				msg, ctx.Session,
+				2*time.Second,
+				ctx,
 			)
-		}
+			if err != nil {
+				c.Logger.CmdErr(ctx, err, "There was an issue creating the reaction watcher")
+				return
+			}
 
+			err = w.Add(
+				disgoreact.Option{
+					Emoji:      "😄",
+					Expiration: 2 * time.Minute,
+					OnSucess:   c.like,
+					OnError:    c.reactErr,
+				},
+				disgoreact.Option{
+					Emoji:      "❌",
+					Expiration: 2 * time.Minute,
+					OnSucess:   c.delete,
+					OnError:    c.reactErr,
+				},
+			)
+			if err != nil {
+				c.Logger.CmdErr(ctx, err,
+					"There was an issue adding a one of the reaction options",
+				)
+			}
+		*/
 		return
 	}
 	ctx.ChannelSend(
@@ -98,6 +97,7 @@ func (c Inspire) Handle(ctx *multiplexer.Context) {
 	)
 }
 
+/*
 func (c Inspire) delete(
 	user *discordgo.User,
 	ctx *disgoreact.WatchContext,
@@ -122,9 +122,9 @@ func (c Inspire) like(
 }
 
 func (c Inspire) reactErr(err error, ctx *disgoreact.WatchContext) {
-	/* Not handling errors */
-}
 
+}
+*/
 // HandleHelp is called by whatever help command is in place when a user enters
 // "!help [command name]". If the help command is not being handled, return
 // false.

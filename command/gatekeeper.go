@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/PulseDevelopmentGroup/0x626f74/log"
 	"github.com/PulseDevelopmentGroup/0x626f74/multiplexer"
 	"github.com/PulseDevelopmentGroup/0x626f74/util"
 )
 
-// Gatekeeper is a command
-// TODO: Make this a better description
+// Gatekeeper is a bot command
 type Gatekeeper struct {
 	Command  string
 	HelpText string
+
+	Logger *log.Logs
 }
 
 const (
@@ -31,7 +33,7 @@ func (c Gatekeeper) Handle(ctx *multiplexer.Context) {
 	guildID := ctx.Message.GuildID
 	roles, err := ctx.Session.GuildRoles(guildID)
 	if err != nil {
-		cmdErr(ctx, err, "There was a problem getting the roles of the guild")
+		c.Logger.CmdErr(ctx, err, "There was a problem getting the roles of the guild")
 		return
 	}
 
@@ -61,9 +63,9 @@ func (c Gatekeeper) Handle(ctx *multiplexer.Context) {
 	/* If there was an argument, was it give, take, or something invalid? */
 	var give bool
 	switch strings.ToLower(ctx.Arguments[0]) {
-	case "give", "g":
+	case "give", "g", "gib":
 		give = true
-	case "take", "t":
+	case "take", "t", "tek":
 		give = false
 	default:
 		ctx.ChannelSend(unknownCommand)
@@ -80,7 +82,7 @@ func (c Gatekeeper) Handle(ctx *multiplexer.Context) {
 	userID := ctx.Message.Author.ID
 	member, err := ctx.Session.GuildMember(ctx.Message.GuildID, userID)
 	if err != nil {
-		cmdErr(ctx, err, "There was a problem getting the user id")
+		c.Logger.CmdErr(ctx, err, "There was a problem getting the user id")
 	}
 
 	/* Check to see if the requested role is valid */
@@ -88,9 +90,7 @@ func (c Gatekeeper) Handle(ctx *multiplexer.Context) {
 
 	roleID, ok := requestableRoles[req]
 	if !ok {
-		ctx.ChannelSend(
-			fmt.Sprintf("Unable to find role `%s`", req),
-		)
+		ctx.ChannelSendf("Unable to find role `%s`", req)
 		return
 	}
 
@@ -102,32 +102,30 @@ func (c Gatekeeper) Handle(ctx *multiplexer.Context) {
 	/* Give a role */
 	if give {
 		if hasRole {
-			ctx.ChannelSend(fmt.Sprintf(
+			ctx.ChannelSendf(
 				"You appear to already have that role, %s", member.Mention(),
-			))
+			)
 			return
 		}
 		ctx.Session.GuildMemberRoleAdd(guildID, userID, roleID)
-		ctx.ChannelSend(
-			fmt.Sprintf(
-				"You have been given role `%s`, %s", req, member.Mention(),
-			),
+		ctx.ChannelSendf(
+			"You have been given role `%s`, %s", req, member.Mention(),
 		)
 		return
 	}
 
 	/* Take a role */
 	if !hasRole {
-		ctx.ChannelSend(fmt.Sprintf(
+		ctx.ChannelSendf(
 			"You don't have that role... How do you expect me to take it, %s?",
 			member.Mention(),
-		))
+		)
 		return
 	}
 	ctx.Session.GuildMemberRoleRemove(guildID, userID, roleID)
-	ctx.ChannelSend(fmt.Sprintf(
+	ctx.ChannelSendf(
 		"Taking role `%s` away, %s", req, member.Mention(),
-	))
+	)
 }
 
 // HandleHelp is called by whatever help command is in place when a user enters
