@@ -290,7 +290,8 @@ func (c Toxic) getMessages(ctx *multiplexer.Context) ([]*discordgo.Message, erro
 		}
 
 		for _, msg := range bulkMessages {
-			if msg.Author.ID == user.ID {
+			// Only get messages from the user in question and ignore commands
+			if msg.Author.ID == user.ID && msg.Content[0:1] != ctx.Prefix {
 				messages = append(messages, msg)
 			}
 		}
@@ -321,7 +322,7 @@ func (c Toxic) HandleHelp(ctx *multiplexer.Context) bool {
 		"`!%s` to check the previous message's toxicity levels\n"+
 			"`!%s [username] [# messages]` to check how toxic the user in question has been\n"+
 			"`!%s [message ID]` to check how toxic a specific message was\n",
-		c.Command,
+		c.Command, c.Command, c.Command,
 	)
 	return true
 }
